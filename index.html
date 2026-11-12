@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>تنس الطاولة</title>
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="لعبة تنس الطاولة ضد الذكاء الاصطناعي أو لاعب آخر">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;\n      height: 100dvh;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      height: 100%;
+      max-height: 500px;
+      background: #1e293b;
+      border: 3px solid #38bdf8;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.92);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+      z-index: 10;
+    }
+    .hidden { display: none !important; }
+    h1 { font-size: 2.2rem; color: #38bdf8; margin-bottom: 10px; }
+    p { color: #94a3b8; margin-bottom: 20px; font-size: 1rem; }
+    .btn-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+    button {
+      background: #334155;
+      color: #fff;
+      border: 2px solid #475569;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    button.active, button:hover {
+      background: #0284c7;
+      border-color: #38bdf8;
+    }
+    .start-btn {
+      background: #10b981;
+      border-color: #34d399;
+      font-size: 1.3rem;
+      padding: 12px 40px;
+      margin-top: 10px;
+    }
+    .start-btn:hover { background: #059669; }
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 15px;
+      right: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .menu-btn {
+      pointer-events: auto;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      background: rgba(51, 65, 85, 0.8);
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="hud" class="hidden">
+    <div style="display:flex;gap:8px;pointer-events:auto"><button class="menu-btn" id="installBtn" style="display:none" onclick="installApp()">تثبيت</button><button class="menu-btn" onclick="showMenu()">القائمة</button></div>
+    <span id="mode-label" style="color:#94a3b8; font-size:0.9rem;"></span>
+  </div>
+
+  <!-- شاشة البداية -->
+  <div id="start-screen" class="screen">
+    <h1>تنس الطاولة</h1>
+    <p>اختر وضع اللعب ومستوى الصعوبة</p>
+    
+    <div class="btn-group" id="mode-btns">
+      <button class="active" onclick="setMode('ai', this)">ضد الذكاء الاصطناعي</button>
+      <button onclick="setMode('pvp', this)">شخصين (نفس الجهاز)</button>
+    </div>
+
+    <div class="btn-group" id="diff-btns">
+      <button onclick="setDiff('easy', this)">سهل</button>
+      <button class="active" onclick="setDiff('medium', this)">متوسط</button>
+      <button onclick="setDiff('hard', this)">صعب</button>
+    </div>
+
+    <button class="start-btn" onclick="startGame()">ابدأ اللعب</button>
+  </div>
+
+  <!-- شاشة نهاية المباراة -->
+  <div id="end-screen" class="screen hidden">
+    <h1 id="winner-text">انتهت المباراة!</h1>
+    <p id="final-score"></p>
+    <button class="start-btn" onclick="startGame()">العب مجدداً</button>
+    <button style="margin-top:10px;" onclick="showMenu()">العودة للقائمة</button>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const container = document.getElementById('game-container');
+
+  let width, height;
+  let gameMode = 'ai'; // 'ai' or 'pvp'
+  let difficulty = 'medium'; // 'easy', 'medium', 'hard'
+  let isPlaying = false;
+  let animId;
+
+  const WIN_SCORE = 7;
+
+  const diffSettings = {
+    easy:   { speed: 3.2, error: 45 },
+    medium: { speed: 5.0, error: 20 },
+    hard:   { speed: 7.2, error: 5 }
+  };
+
+  let p1 = { x: 20, y: 0, w: 12, h: 85, score: 0, color: '#38bdf8' };
+  let p2 = { x: 0,  y: 0, w: 12, h: 85, score: 0, color: '#f43f5e', aiOffset: 0 };
+  let ball = { x: 0, y: 0, r: 9, vx: 0, vy: 0, speed: 6 };
+
+  function resize() {
+    width = container.clientWidth;
+    height = container.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
+    p1.x = 20;
+    p2.x = width - 32;
+    if (!isPlaying) {
+      p1.y = height / 2 - p1.h / 2;
+      p2.y = height / 2 - p2.h / 2;
+    }
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function setMode(mode, btn) {
+    gameMode = mode;
+    document.querySelectorAll('#mode-btns button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('diff-btns').style.display = (mode === 'ai') ? 'flex' : 'none';
+  }
+
+  function setDiff(diff, btn) {
+    difficulty = diff;
+    document.querySelectorAll('#diff-btns button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function showMenu() {
+    isPlaying = false;
+    cancelAnimationFrame(animId);
+    document.getElementById('start-screen').classList.remove('hidden');
+    document.getElementById('end-screen').classList.add('hidden');
+    document.getElementById('hud').classList.add('hidden');
+  }
+
+  function resetBall(dir = 1) {
+    ball.x = width / 2;
+    ball.y = height / 2;
+    ball.speed = 6;
+    let angle = (Math.random() * 0.6 - 0.3);
+    ball.vx = dir * ball.speed * Math.cos(angle);
+    ball.vy = ball.speed * Math.sin(angle);
+    p2.aiOffset = (Math.random() * 2 - 1) * diffSettings[difficulty].error;
+  }
+
+  function startGame() {
+    p1.score = 0;
+    p2.score = 0;
+    p1.y = height / 2 - p1.h / 2;
+    p2.y = height / 2 - p2.h / 2;
+    p1TargetY = p1.y;
+    p2TargetY = p2.y;
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('end-screen').classList.add('hidden');
+    document.getElementById('hud').classList.remove('hidden');
+    document.getElementById('mode-label').textContent = (gameMode === 'ai') ? 'ضد الذكاء الاصطناعي' : 'لاعب 1 ضد لاعب 2';
+    isPlaying = true;
+    resetBall(Math.random() > 0.5 ? 1 : -1);
+    loop();
+  }
+
+  // تحكم سلس بالفأرة واللمس ولوحة المفاتيح
+  let p1TargetY = height / 2 - p1.h / 2;
+  let p2TargetY = height / 2 - p2.h / 2;
+  const keys = Object.create(null);
+
+  function setPlayerTarget(clientX, clientY) {
+    if (!isPlaying) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const target = Math.max(0, Math.min(height - p1.h, y - p1.h / 2));
+
+    if (gameMode === 'ai' || x < width / 2) {
+      p1TargetY = target;
+    } else {
+      p2TargetY = Math.max(0, Math.min(height - p2.h, y - p2.h / 2));
+    }
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    setPlayerTarget(e.clientX, e.clientY);
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'mouse' || e.buttons !== 0 || e.pressure > 0) {
+      setPlayerTarget(e.clientX, e.clientY);
+    }
+  });
+
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+  window.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    keys[key] = true;
+    if (['arrowup', 'arrowdown', ' '].includes(key)) e.preventDefault();
+  });
+
+  window.addEventListener('keyup', (e) => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  function movePlayerPaddles(deltaTime) {
+    // تحديد سرعة المضرب حتى لا يقفز فجأة أو يتحرك بسرعة مبالغ فيها.
+    const maxStep = 360 * Math.min(deltaTime, 32) / 1000;
+
+    function approach(current, target) {
+      const difference = target - current;
+      return current + Math.sign(difference) * Math.min(Math.abs(difference), maxStep);
+    }
+
+    p1.y = approach(p1.y, p1TargetY);
+
+    if (gameMode === 'pvp') {
+      p2.y = approach(p2.y, p2TargetY);
+    }
+
+    // تحكم بديل بلوحة المفاتيح: W/S للاعب الأيسر والسهمان للأيمن.
+    const keyStep = 300 * Math.min(deltaTime, 32) / 1000;
+    if (keys['w']) p1.y -= keyStep;
+    if (keys['s']) p1.y += keyStep;
+
+    if (gameMode === 'pvp') {
+      if (keys['arrowup']) p2.y -= keyStep;
+      if (keys['arrowdown']) p2.y += keyStep;
+    }
+
+    p1.y = Math.max(0, Math.min(height - p1.h, p1.y));
+    p2.y = Math.max(0, Math.min(height - p2.h, p2.y));
+  }
+
+  function updateAI() {
+    const settings = diffSettings[difficulty];
+    let targetY = (ball.vx > 0) ? (ball.y + p2.aiOffset - p2.h / 2) : (height / 2 - p2.h / 2);
+    let diff = targetY - p2.y;
+    if (Math.abs(diff) > settings.speed) {
+      p2.y += Math.sign(diff) * settings.speed;
+    } else {
+      p2.y += diff;
+    }
+    p2.y = Math.max(0, Math.min(height - p2.h, p2.y));
+  }
+
+  function update() {
+    if (gameMode === 'ai') updateAI();
+
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // ارتداد أعلى وأسفل
+    if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy *= -1; }
+    if (ball.y + ball.r > height) { ball.y = height - ball.r; ball.vy *= -1; }
+
+    // اصطدام بالمضرب الأيسر (اللاعب 1)
+    if (ball.vx < 0 && ball.x - ball.r <= p1.x + p1.w && ball.x + ball.r >= p1.x &&
+        ball.y >= p1.y && ball.y <= p1.y + p1.h) {
+      let hitPos = (ball.y - (p1.y + p1.h / 2)) / (p1.h / 2);
+      let angle = hitPos * (Math.PI / 4);
+      ball.speed = Math.min(13, ball.speed + 0.35);
+      ball.vx = ball.speed * Math.cos(angle);
+      ball.vy = ball.speed * Math.sin(angle);
+      ball.x = p1.x + p1.w + ball.r;
+      p2.aiOffset = (Math.random() * 2 - 1) * diffSettings[difficulty].error;
+    }
+
+    // اصطدام بالمضرب الأيمن (اللاعب 2 أو الذكاء الاصطناعي)
+    if (ball.vx > 0 && ball.x + ball.r >= p2.x && ball.x - ball.r <= p2.x + p2.w &&
+        ball.y >= p2.y && ball.y <= p2.y + p2.h) {
+      let hitPos = (ball.y - (p2.y + p2.h / 2)) / (p2.h / 2);
+      let angle = hitPos * (Math.PI / 4);
+      ball.speed = Math.min(13, ball.speed + 0.35);
+      ball.vx = -ball.speed * Math.cos(angle);
+      ball.vy = ball.speed * Math.sin(angle);
+      ball.x = p2.x - ball.r;
+    }
+
+    // تسجيل النقاط
+    if (ball.x < 0) {
+      p2.score++;
+      checkWin() || resetBall(1);
+    } else if (ball.x > width) {
+      p1.score++;
+      checkWin() || resetBall(-1);
+    }
+  }
+
+  function checkWin() {
+    if (p1.score >= WIN_SCORE || p2.score >= WIN_SCORE) {
+      isPlaying = false;
+      document.getElementById('hud').classList.add('hidden');
+      document.getElementById('end-screen').classList.remove('hidden');
+      let winner = (p1.score >= WIN_SCORE) ? 'فاز اللاعب الأيسر!' : (gameMode === 'ai' ? 'فاز الذكاء الاصطناعي!' : 'فاز اللاعب الأيمن!');
+      document.getElementById('winner-text').textContent = winner;
+      document.getElementById('final-score').textContent = `النتيجة النهائية: ${p1.score} - ${p2.score}`;
+      return true;
+    }
+    return false;
+  }
+
+  function draw() { 
+    // خلفية الطاولة
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#0f766e';
+    ctx.fillRect(0, 0, width, height);
+
+    // خط المنتصف
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 10]);
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 0);
+    ctx.lineTo(width / 2, height);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // المضربان
+    ctx.fillStyle = p1.color;
+    ctx.fillRect(p1.x, p1.y, p1.w, p1.h);
+
+    ctx.fillStyle = p2.color;
+    ctx.fillRect(p2.x, p2.y, p2.w, p2.h);
+
+    // الكرة
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fill();
+
+    // النتيجة
+    ctx.font = 'bold 32px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(p1.score, width / 2 - 45, 45);
+    ctx.fillText(p2.score, width / 2 + 45, 45);
+  }
+
+  let previousFrameTime = 0;
+
+  function loop(timestamp = 0) {
+    if (!isPlaying) return;
+
+    const deltaTime = previousFrameTime
+      ? Math.min(timestamp - previousFrameTime, 32)
+      : 16.67;
+    previousFrameTime = timestamp;
+
+    movePlayerPaddles(deltaTime);
+    update();
+    draw();
+
+    if (isPlaying) {
+      animId = requestAnimationFrame(loop);
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    resize();
+    p1.y = Math.max(0, Math.min(height - p1.h, p1.y));
+    p2.y = Math.max(0, Math.min(height - p2.h, p2.y));
+    p1TargetY = p1.y;
+    p2TargetY = p2.y;
+    draw();
+  });
+
+  draw();
+</script>
+</body>
+</html>
