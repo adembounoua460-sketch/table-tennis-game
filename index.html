@@ -1,432 +1,657 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>تنس الطاولة</title>
-  <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="لعبة تنس الطاولة ضد الذكاء الاصطناعي أو لاعب آخر">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-    body {
-      background-color: #0f172a;
-      color: #f8fafc;
-      font-family: system-ui, -apple-system, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;\n      height: 100dvh;
-      overflow: hidden;
-      touch-action: none;
-    }
-    #game-container {
-      position: relative;
-      width: 100%;
-      max-width: 800px;
-      height: 100%;
-      max-height: 500px;
-      background: #1e293b;
-      border: 3px solid #38bdf8;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-    .screen {
-      position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.92);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      text-align: center;
-      z-index: 10;
-    }
-    .hidden { display: none !important; }
-    h1 { font-size: 2.2rem; color: #38bdf8; margin-bottom: 10px; }
-    p { color: #94a3b8; margin-bottom: 20px; font-size: 1rem; }
-    .btn-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
-    button {
-      background: #334155;
-      color: #fff;
-      border: 2px solid #475569;
-      padding: 10px 20px;
-      font-size: 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.2s;
-    }
-    button.active, button:hover {
-      background: #0284c7;
-      border-color: #38bdf8;
-    }
-    .start-btn {
-      background: #10b981;
-      border-color: #34d399;
-      font-size: 1.3rem;
-      padding: 12px 40px;
-      margin-top: 10px;
-    }
-    .start-btn:hover { background: #059669; }
-    #hud {
-      position: absolute;
-      top: 10px;
-      left: 15px;
-      right: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      pointer-events: none;
-      z-index: 5;
-    }
-    .menu-btn {
-      pointer-events: auto;
-      padding: 6px 12px;
-      font-size: 0.85rem;
-      background: rgba(51, 65, 85, 0.8);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<meta name="description" content="لعبة تنس الطاولة">
+<title>تنس الطاولة</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;user-select:none}
+body{
+ background:#0f172a;color:#f8fafc;font-family:system-ui,sans-serif;
+ display:flex;justify-content:center;align-items:center;
+ height:100vh;height:100dvh;overflow:hidden;touch-action:none
+}
+#game-container{
+ position:relative;width:100%;max-width:800px;height:100%;
+ max-height:500px;background:#1e293b;border:3px solid #38bdf8;
+ border-radius:12px;overflow:hidden
+}
+canvas{display:block;width:100%;height:100%}
+.screen{
+ position:absolute;inset:0;background:rgba(15,23,42,.96);
+ display:flex;flex-direction:column;justify-content:center;align-items:center;
+ padding:18px;text-align:center;z-index:10;overflow:auto
+}
+.hidden{display:none!important}
+h1{font-size:2rem;color:#38bdf8;margin-bottom:10px}
+p{color:#cbd5e1;margin:8px 0 16px}
+button,input{
+ font:inherit;border-radius:9px;padding:11px 16px
+}
+button{
+ background:#334155;color:white;border:2px solid #475569;
+ font-weight:bold;cursor:pointer;margin:4px
+}
+button.active,button:hover{background:#0284c7;border-color:#38bdf8}
+.start-btn{background:#059669;border-color:#34d399;font-size:1.15rem;padding:12px 30px}
+input{
+ background:#f8fafc;color:#0f172a;border:2px solid #64748b;
+ width:min(260px,90%);text-align:center;margin:8px
+}
+.btn-group{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:8px}
+#hud{
+ position:absolute;top:8px;left:10px;right:10px;
+ display:flex;justify-content:space-between;align-items:center;
+ z-index:5;pointer-events:none
+}
+#hud button{pointer-events:auto;padding:6px 10px;font-size:.8rem}
+#status{color:#facc15;font-size:.9rem;margin:8px}
+#room-code{font-size:1.7rem;color:#4ade80;letter-spacing:4px;margin:8px}
+.small{font-size:.8rem;color:#94a3b8}
+</style>
 </head>
 <body>
 
 <div id="game-container">
-  <div id="hud" class="hidden">
-    <div style="display:flex;gap:8px;pointer-events:auto"><button class="menu-btn" id="installBtn" style="display:none" onclick="installApp()">تثبيت</button><button class="menu-btn" onclick="showMenu()">القائمة</button></div>
-    <span id="mode-label" style="color:#94a3b8; font-size:0.9rem;"></span>
+ <div id="hud" class="hidden">
+  <button onclick="showMenu()">القائمة</button>
+  <span id="mode-label"></span>
+ </div>
+ <canvas id="gameCanvas"></canvas>
+
+ <div id="start-screen" class="screen">
+  <h1>🏓 تنس الطاولة</h1>
+  <p>اختر طريقة اللعب</p>
+  <div class="btn-group">
+   <button class="active" id="aiBtn" onclick="setMode('ai',this)">ضد الذكاء الاصطناعي</button>
+   <button id="pvpBtn" onclick="setMode('pvp',this)">لاعبان على نفس الجهاز</button>
+   <button id="onlineBtn" onclick="openOnline()">أونلاين 🌐</button>
   </div>
-
-  <!-- شاشة البداية -->
-  <div id="start-screen" class="screen">
-    <h1>تنس الطاولة</h1>
-    <p>اختر وضع اللعب ومستوى الصعوبة</p>
-    
-    <div class="btn-group" id="mode-btns">
-      <button class="active" onclick="setMode('ai', this)">ضد الذكاء الاصطناعي</button>
-      <button onclick="setMode('pvp', this)">شخصين (نفس الجهاز)</button>
-    </div>
-
-    <div class="btn-group" id="diff-btns">
-      <button onclick="setDiff('easy', this)">سهل</button>
-      <button class="active" onclick="setDiff('medium', this)">متوسط</button>
-      <button onclick="setDiff('hard', this)">صعب</button>
-    </div>
-
-    <button class="start-btn" onclick="startGame()">ابدأ اللعب</button>
+  <div id="diff-btns" class="btn-group">
+   <button onclick="setDiff('easy',this)">سهل</button>
+   <button class="active" onclick="setDiff('medium',this)">متوسط</button>
+   <button onclick="setDiff('hard',this)">صعب</button>
   </div>
+  <button class="start-btn" onclick="startGame()">ابدأ اللعب</button>
+  <p class="small">الفوز عند تسجيل 7 نقاط</p>
+ </div>
 
-  <!-- شاشة نهاية المباراة -->
-  <div id="end-screen" class="screen hidden">
-    <h1 id="winner-text">انتهت المباراة!</h1>
-    <p id="final-score"></p>
-    <button class="start-btn" onclick="startGame()">العب مجدداً</button>
-    <button style="margin-top:10px;" onclick="showMenu()">العودة للقائمة</button>
-  </div>
+ <div id="online-screen" class="screen hidden">
+  <h1>اللعب أونلاين</h1>
+  <p>أنشئ غرفة أو انضم إلى صديقك</p>
+  <button class="start-btn" onclick="createRoom()">إنشاء غرفة</button>
+  <div id="room-code" class="hidden"></div>
+  <p id="online-status">أو أدخل رمز الغرفة</p>
+  <input id="join-code" inputmode="numeric" maxlength="6" placeholder="رمز الغرفة">
+  <button onclick="joinRoom()">انضمام إلى غرفة</button>
+  <button id="readyBtn" class="hidden" onclick="toggleReady()">أنا جاهز</button>
+  <button onclick="leaveRoom()">رجوع</button>
+ </div>
 
-  <canvas id="gameCanvas"></canvas>
+ <div id="end-screen" class="screen hidden">
+  <h1 id="winner-text">انتهت المباراة!</h1>
+  <p id="final-score"></p>
+  <button class="start-btn" onclick="startGame()">العب مجدداً</button>
+  <button onclick="showMenu()">القائمة الرئيسية</button>
+ </div>
 </div>
 
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  const container = document.getElementById('game-container');
+/* إعداد Firebase */
+const firebaseConfig = {
+ apiKey: "AIzaSyBoaEzE2-FtKW9Dx62GSQbgijf67wItLHg",
+ authDomain: "table-teniss-online-e192a.firebaseapp.com",
+ databaseURL: "https://table-teniss-online-e192a-default-rtdb.europe-west1.firebasedatabase.app",
+ projectId: "table-teniss-online-e192a",
+ storageBucket: "table-teniss-online-e192a.firebasestorage.app",
+ messagingSenderId: "649168910403",
+ appId: "1:649168910403:web:9cfafe2191e81fec30bcf6"
+};
 
-  let width, height;
-  let gameMode = 'ai'; // 'ai' or 'pvp'
-  let difficulty = 'medium'; // 'easy', 'medium', 'hard'
-  let isPlaying = false;
-  let animId;
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
 
-  const WIN_SCORE = 7;
+let myUid = null;
+let roomCode = null;
+let roomRef = null;
+let roomRole = null;
+let roomListener = null;
+let paddleListener = null;
+let stateListener = null;
+let onlineReady = false;
+let opponentReady = false;
+let lastPaddleSend = 0;
+let lastStateSend = 0;
+let onlineStatus = "waiting";
 
-  const diffSettings = {
-    easy:   { speed: 3.2, error: 45 },
-    medium: { speed: 5.0, error: 20 },
-    hard:   { speed: 7.2, error: 5 }
-  };
+auth.signInAnonymously().then(result=>{
+ myUid = result.user.uid;
+}).catch(error=>{
+ console.error(error);
+ alert("تعذر تسجيل الدخول إلى Firebase. تحقق من اتصال الإنترنت.");
+});
 
-  let p1 = { x: 20, y: 0, w: 12, h: 85, score: 0, color: '#38bdf8' };
-  let p2 = { x: 0,  y: 0, w: 12, h: 85, score: 0, color: '#f43f5e', aiOffset: 0 };
-  let ball = { x: 0, y: 0, r: 9, vx: 0, vy: 0, speed: 6 };
+/* عناصر اللعبة */
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
+const container=document.getElementById("game-container");
 
-  function resize() {
-    width = container.clientWidth;
-    height = container.clientHeight;
-    canvas.width = width;
-    canvas.height = height;
-    p1.x = 20;
-    p2.x = width - 32;
-    if (!isPlaying) {
-      p1.y = height / 2 - p1.h / 2;
-      p2.y = height / 2 - p2.h / 2;
+let width=0,height=0;
+let gameMode="ai",difficulty="medium";
+let isPlaying=false,animId=0,previousFrameTime=0;
+const WIN_SCORE=7;
+
+const diffSettings={
+ easy:{speed:3.2,error:45},
+ medium:{speed:5,error:20},
+ hard:{speed:7.2,error:5}
+};
+
+let p1={x:20,y:0,w:12,h:85,score:0,color:"#38bdf8"};
+let p2={x:0,y:0,w:12,h:85,score:0,color:"#f43f5e",aiOffset:0};
+let ball={x:0,y:0,r:9,vx:0,vy:0,speed:6};
+let p1TargetY=0,p2TargetY=0;
+const keys=Object.create(null);
+
+function resize(){
+ width=container.clientWidth;
+ height=container.clientHeight;
+ canvas.width=width;
+ canvas.height=height;
+ p1.x=20;
+ p2.x=width-32;
+ if(!isPlaying){
+  p1.y=height/2-p1.h/2;
+  p2.y=height/2-p2.h/2;
+ }
+ p1TargetY=p1.y;
+ p2TargetY=p2.y;
+ draw();
+}
+window.addEventListener("resize",resize);
+resize();
+
+function setMode(mode,btn){
+ gameMode=mode;
+ document.querySelectorAll("#start-screen .btn-group button").forEach(b=>b.classList.remove("active"));
+ btn.classList.add("active");
+ document.getElementById("diff-btns").style.display=mode==="ai"?"flex":"none";
+}
+function setDiff(diff,btn){
+ difficulty=diff;
+ document.querySelectorAll("#diff-btns button").forEach(b=>b.classList.remove("active"));
+ btn.classList.add("active");
+}
+function hideScreens(){
+ ["start-screen","online-screen","end-screen"].forEach(id=>
+  document.getElementById(id).classList.add("hidden"));
+}
+function showMenu(){
+ stopGame();
+ leaveRoom(false);
+ hideScreens();
+ document.getElementById("start-screen").classList.remove("hidden");
+ document.getElementById("hud").classList.add("hidden");
+}
+function stopGame(){
+ isPlaying=false;
+ cancelAnimationFrame(animId);
+ previousFrameTime=0;
+}
+function resetBall(dir=1){
+ ball.x=width/2;
+ ball.y=height/2;
+ ball.speed=6;
+ const angle=Math.random()*.6-.3;
+ ball.vx=dir*ball.speed*Math.cos(angle);
+ ball.vy=ball.speed*Math.sin(angle);
+ p2.aiOffset=(Math.random()*2-1)*diffSettings[difficulty].error;
+}
+function startGame(){
+ if(gameMode==="online")return;
+ stopGame();
+ p1.score=0;p2.score=0;
+ p1.y=height/2-p1.h/2;
+ p2.y=height/2-p2.h/2;
+ p1TargetY=p1.y;p2TargetY=p2.y;
+ hideScreens();
+ document.getElementById("hud").classList.remove("hidden");
+ document.getElementById("mode-label").textContent=
+  gameMode==="ai"?"ضد الذكاء الاصطناعي":"لاعب 1 ضد لاعب 2";
+ isPlaying=true;
+ resetBall(Math.random()>.5?1:-1);
+ loop();
+}
+
+function setPlayerTarget(clientX,clientY){
+ if(!isPlaying)return;
+ const rect=canvas.getBoundingClientRect();
+ const x=clientX-rect.left;
+ const y=clientY-rect.top;
+ const target=Math.max(0,Math.min(height-p1.h,y-p1.h/2));
+
+ if(gameMode==="online"){
+  if(roomRole==="host")p1TargetY=target;
+  else p2TargetY=Math.max(0,Math.min(height-p2.h,y-p2.h/2));
+ }else if(gameMode==="ai"||x<width/2){
+  p1TargetY=target;
+ }else{
+  p2TargetY=Math.max(0,Math.min(height-p2.h,y-p2.h/2));
+ }
+}
+canvas.addEventListener("pointerdown",e=>{
+ e.preventDefault();
+ canvas.setPointerCapture(e.pointerId);
+ setPlayerTarget(e.clientX,e.clientY);
+});
+canvas.addEventListener("pointermove",e=>{
+ if(e.pointerType==="mouse"||e.buttons!==0||e.pressure>0)
+  setPlayerTarget(e.clientX,e.clientY);
+});
+canvas.addEventListener("contextmenu",e=>e.preventDefault());
+
+window.addEventListener("keydown",e=>{
+ const key=e.key.toLowerCase();
+ keys[key]=true;
+ if(["arrowup","arrowdown"," "].includes(key))e.preventDefault();
+});
+window.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+
+function approach(current,target,maxStep){
+ const d=target-current;
+ return current+Math.sign(d)*Math.min(Math.abs(d),maxStep);
+}
+function movePaddles(dt){
+ const step=360*Math.min(dt,32)/1000;
+ const keyStep=300*Math.min(dt,32)/1000;
+
+ p1.y=approach(p1.y,p1TargetY,step);
+ if(gameMode==="pvp")p2.y=approach(p2.y,p2TargetY,step);
+
+ if(gameMode==="online"){
+  if(roomRole==="host")p1.y=approach(p1.y,p1TargetY,step);
+  else p2.y=approach(p2.y,p2TargetY,step);
+ }
+ if(keys.w)p1.y-=keyStep;
+ if(keys.s)p1.y+=keyStep;
+ if(gameMode==="pvp"){
+  if(keys.arrowup)p2.y-=keyStep;
+  if(keys.arrowdown)p2.y+=keyStep;
+ }
+ p1.y=Math.max(0,Math.min(height-p1.h,p1.y));
+ p2.y=Math.max(0,Math.min(height-p2.h,p2.y));
+}
+
+function updateAI(){
+ const settings=diffSettings[difficulty];
+ const target=ball.vx>0?ball.y+p2.aiOffset-p2.h/2:height/2-p2.h/2;
+ const d=target-p2.y;
+ p2.y+=Math.sign(d)*Math.min(Math.abs(d),settings.speed);
+ p2.y=Math.max(0,Math.min(height-p2.h,p2.y));
+}
+
+function update(){
+ if(gameMode==="ai")updateAI();
+
+ ball.x+=ball.vx;
+ ball.y+=ball.vy;
+
+ if(ball.y-ball.r<0){ball.y=ball.r;ball.vy*=-1;}
+ if(ball.y+ball.r>height){ball.y=height-ball.r;ball.vy*=-1;}
+
+ if(ball.vx<0&&ball.x-ball.r<=p1.x+p1.w&&ball.x+ball.r>=p1.x&&
+    ball.y>=p1.y&&ball.y<=p1.y+p1.h){
+  const hit=(ball.y-(p1.y+p1.h/2))/(p1.h/2);
+  const angle=hit*(Math.PI/4);
+  ball.speed=Math.min(13,ball.speed+.35);
+  ball.vx=ball.speed*Math.cos(angle);
+  ball.vy=ball.speed*Math.sin(angle);
+  ball.x=p1.x+p1.w+ball.r;
+ }
+
+ if(ball.vx>0&&ball.x+ball.r>=p2.x&&ball.x-ball.r<=p2.x+p2.w&&
+    ball.y>=p2.y&&ball.y<=p2.y+p2.h){
+  const hit=(ball.y-(p2.y+p2.h/2))/(p2.h/2);
+  const angle=hit*(Math.PI/4);
+  ball.speed=Math.min(13,ball.speed+.35);
+  ball.vx=-ball.speed*Math.cos(angle);
+  ball.vy=ball.speed*Math.sin(angle);
+  ball.x=p2.x-ball.r;
+ }
+
+ if(ball.x<0){
+  p2.score++;
+  if(!checkWin())resetBall(1);
+ }else if(ball.x>width){
+  p1.score++;
+  if(!checkWin())resetBall(-1);
+ }
+}
+
+function checkWin(){
+ if(p1.score>=WIN_SCORE||p2.score>=WIN_SCORE){
+  stopGame();
+  document.getElementById("hud").classList.add("hidden");
+  document.getElementById("end-screen").classList.remove("hidden");
+  document.getElementById("winner-text").textContent=
+   p1.score>=WIN_SCORE?"فاز اللاعب الأيسر!":"فاز اللاعب الأيمن!";
+  document.getElementById("final-score").textContent=
+   `النتيجة النهائية: ${p1.score} - ${p2.score}`;
+  if(gameMode==="online"&&roomRole==="host"){
+   roomRef.child("status").set("finished");
+   roomRef.child("state").update({
+    p1Score:p1.score,p2Score:p2.score
+   });
+  }
+  return true;
+ }
+ return false;
+}
+
+function draw(){
+ if(!ctx)return;
+ ctx.clearRect(0,0,width,height);
+ ctx.fillStyle="#0f766e";
+ ctx.fillRect(0,0,width,height);
+
+ ctx.strokeStyle="rgba(255,255,255,.75)";
+ ctx.lineWidth=2;
+ ctx.setLineDash([10,10]);
+ ctx.beginPath();
+ ctx.moveTo(width/2,0);ctx.lineTo(width/2,height);
+ ctx.stroke();ctx.setLineDash([]);
+
+ ctx.fillStyle=p1.color;ctx.fillRect(p1.x,p1.y,p1.w,p1.h);
+ ctx.fillStyle=p2.color;ctx.fillRect(p2.x,p2.y,p2.w,p2.h);
+
+ ctx.beginPath();ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+ ctx.fillStyle="#f8fafc";ctx.fill();
+
+ ctx.font="bold 32px system-ui";
+ ctx.textAlign="center";ctx.fillStyle="#fff";
+ ctx.fillText(p1.score,width/2-45,45);
+ ctx.fillText(p2.score,width/2+45,45);
+}
+
+function loop(timestamp=0){
+ if(!isPlaying)return;
+ const dt=previousFrameTime?Math.min(timestamp-previousFrameTime,32):16.67;
+ previousFrameTime=timestamp;
+
+ if(gameMode!=="online"||roomRole==="host"){
+  movePaddles(dt);
+  update();
+ }
+ draw();
+
+ if(gameMode==="online")syncOnline(timestamp);
+ if(isPlaying)animId=requestAnimationFrame(loop);
+}
+
+/* واجهة الأونلاين */
+function openOnline(){
+ stopGame();
+ hideScreens();
+ document.getElementById("online-screen").classList.remove("hidden");
+ document.getElementById("room-code").classList.add("hidden");
+ document.getElementById("readyBtn").classList.add("hidden");
+ document.getElementById("online-status").textContent="أنشئ غرفة أو أدخل رمز صديقك";
+}
+
+async function waitForAuth(){
+ if(myUid)return myUid;
+ const result=await auth.signInAnonymously();
+ myUid=result.user.uid;
+ return myUid;
+}
+function makeCode(){
+ return String(Math.floor(100000+Math.random()*900000));
+}
+function setOnlineMessage(message){
+ document.getElementById("online-status").textContent=message;
+}
+function detachRoomListeners(){
+ if(roomRef){
+  if(roomListener)roomRef.off("value",roomListener);
+  if(paddleListener)roomRef.child("paddles").off("value",paddleListener);
+  if(stateListener)roomRef.child("state").off("value",stateListener);
+ }
+ roomListener=null;paddleListener=null;stateListener=null;
+}
+
+async function createRoom(){
+ try{
+  await waitForAuth();
+  setOnlineMessage("جارٍ إنشاء الغرفة...");
+  let code=null,ref=null,created=false;
+
+  for(let i=0;i<8;i++){
+   const candidate=makeCode();
+   const candidateRef=db.ref("rooms/"+candidate);
+   const result=await candidateRef.transaction(current=>{
+    if(current===null){
+     return {
+      host:myUid,
+      guest:null,
+      ready:{host:false,guest:false},
+      status:"waiting",
+      paddles:{hostY:height/2-p1.h/2,guestY:height/2-p2.h/2},
+      state:{
+       p1Y:height/2-p1.h/2,p2Y:height/2-p2.h/2,
+       ballX:width/2,ballY:height/2,ballVX:0,ballVY:0,
+       p1Score:0,p2Score:0
+      }
+     };
     }
+    return;
+   });
+   if(result.committed){code=candidate;ref=candidateRef;created=true;break;}
   }
-  window.addEventListener('resize', resize);
-  resize();
+  if(!created)throw new Error("تعذر إنشاء رمز غرفة.");
 
-  function setMode(mode, btn) {
-    gameMode = mode;
-    document.querySelectorAll('#mode-btns button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('diff-btns').style.display = (mode === 'ai') ? 'flex' : 'none';
+  roomCode=code;roomRef=ref;roomRole="host";
+  showRoomLobby();
+ }catch(e){
+  console.error(e);setOnlineMessage("حدث خطأ: "+e.message);
+ }
+}
+
+async function joinRoom(){
+ try{
+  await waitForAuth();
+  const code=document.getElementById("join-code").value.trim();
+  if(!/^\d{6}$/.test(code)){
+   setOnlineMessage("أدخل رمزاً صحيحاً من 6 أرقام.");return;
   }
-
-  function setDiff(diff, btn) {
-    difficulty = diff;
-    document.querySelectorAll('#diff-btns button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
-
-  function showMenu() {
-    isPlaying = false;
-    cancelAnimationFrame(animId);
-    document.getElementById('start-screen').classList.remove('hidden');
-    document.getElementById('end-screen').classList.add('hidden');
-    document.getElementById('hud').classList.add('hidden');
-  }
-
-  function resetBall(dir = 1) {
-    ball.x = width / 2;
-    ball.y = height / 2;
-    ball.speed = 6;
-    let angle = (Math.random() * 0.6 - 0.3);
-    ball.vx = dir * ball.speed * Math.cos(angle);
-    ball.vy = ball.speed * Math.sin(angle);
-    p2.aiOffset = (Math.random() * 2 - 1) * diffSettings[difficulty].error;
-  }
-
-  function startGame() {
-    p1.score = 0;
-    p2.score = 0;
-    p1.y = height / 2 - p1.h / 2;
-    p2.y = height / 2 - p2.h / 2;
-    p1TargetY = p1.y;
-    p2TargetY = p2.y;
-    document.getElementById('start-screen').classList.add('hidden');
-    document.getElementById('end-screen').classList.add('hidden');
-    document.getElementById('hud').classList.remove('hidden');
-    document.getElementById('mode-label').textContent = (gameMode === 'ai') ? 'ضد الذكاء الاصطناعي' : 'لاعب 1 ضد لاعب 2';
-    isPlaying = true;
-    resetBall(Math.random() > 0.5 ? 1 : -1);
-    loop();
-  }
-
-  // تحكم سلس بالفأرة واللمس ولوحة المفاتيح
-  let p1TargetY = height / 2 - p1.h / 2;
-  let p2TargetY = height / 2 - p2.h / 2;
-  const keys = Object.create(null);
-
-  function setPlayerTarget(clientX, clientY) {
-    if (!isPlaying) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    const target = Math.max(0, Math.min(height - p1.h, y - p1.h / 2));
-
-    if (gameMode === 'ai' || x < width / 2) {
-      p1TargetY = target;
-    } else {
-      p2TargetY = Math.max(0, Math.min(height - p2.h, y - p2.h / 2));
-    }
-  }
-
-  canvas.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
-    setPlayerTarget(e.clientX, e.clientY);
+  const ref=db.ref("rooms/"+code);
+  let joined=false;
+  const result=await ref.transaction(room=>{
+   if(!room||room.status!=="waiting"||room.guest)return;
+   if(room.host===myUid)return;
+   room.guest=myUid;
+   room.ready=room.ready||{host:false,guest:false};
+   room.ready.guest=false;
+   return room;
   });
+  if(result.committed)joined=true;
+  if(!joined){
+   setOnlineMessage("الغرفة غير موجودة أو ممتلئة أو بدأت المباراة.");return;
+  }
+  roomCode=code;roomRef=ref;roomRole="guest";
+  showRoomLobby();
+ }catch(e){
+  console.error(e);setOnlineMessage("تعذر الانضمام: "+e.message);
+ }
+}
 
-  canvas.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse' || e.buttons !== 0 || e.pressure > 0) {
-      setPlayerTarget(e.clientX, e.clientY);
-    }
-  });
+function showRoomLobby(){
+ document.getElementById("room-code").textContent="رمز الغرفة: "+roomCode;
+ document.getElementById("room-code").classList.remove("hidden");
+ document.getElementById("readyBtn").classList.remove("hidden");
+ document.getElementById("readyBtn").textContent="أنا جاهز";
+ setOnlineMessage("أرسل الرمز لصديقك وانتظر انضمامه.");
+ listenToRoom();
+}
 
-  canvas.addEventListener('contextmenu', e => e.preventDefault());
+function listenToRoom(){
+ detachRoomListeners();
+ roomListener=snapshot=>{
+  const room=snapshot.val();
+  if(!room){
+   setOnlineMessage("الغرفة لم تعد موجودة.");return;
+  }
+  const ready=room.ready||{};
+  opponentReady=roomRole==="host"?!!ready.guest:!!ready.host;
+  onlineReady=roomRole==="host"?!!ready.host:!!ready.guest;
 
-  window.addEventListener('keydown', (e) => {
-    const key = e.key.toLowerCase();
-    keys[key] = true;
-    if (['arrowup', 'arrowdown', ' '].includes(key)) e.preventDefault();
-  });
-
-  window.addEventListener('keyup', (e) => {
-    keys[e.key.toLowerCase()] = false;
-  });
-
-  function movePlayerPaddles(deltaTime) {
-    // تحديد سرعة المضرب حتى لا يقفز فجأة أو يتحرك بسرعة مبالغ فيها.
-    const maxStep = 360 * Math.min(deltaTime, 32) / 1000;
-
-    function approach(current, target) {
-      const difference = target - current;
-      return current + Math.sign(difference) * Math.min(Math.abs(difference), maxStep);
-    }
-
-    p1.y = approach(p1.y, p1TargetY);
-
-    if (gameMode === 'pvp') {
-      p2.y = approach(p2.y, p2TargetY);
-    }
-
-    // تحكم بديل بلوحة المفاتيح: W/S للاعب الأيسر والسهمان للأيمن.
-    const keyStep = 300 * Math.min(deltaTime, 32) / 1000;
-    if (keys['w']) p1.y -= keyStep;
-    if (keys['s']) p1.y += keyStep;
-
-    if (gameMode === 'pvp') {
-      if (keys['arrowup']) p2.y -= keyStep;
-      if (keys['arrowdown']) p2.y += keyStep;
-    }
-
-    p1.y = Math.max(0, Math.min(height - p1.h, p1.y));
-    p2.y = Math.max(0, Math.min(height - p2.h, p2.y));
+  if(!room.guest&&roomRole==="host"){
+   setOnlineMessage("أنت المضيف. أرسل الرمز لصديقك.");
+  }else{
+   setOnlineMessage("حالة الاستعداد: أنت "+
+    (onlineReady?"جاهز":"لم تستعد بعد")+"، الخصم "+
+    (opponentReady?"جاهز":"ينتظر")+".");
   }
 
-  function updateAI() {
-    const settings = diffSettings[difficulty];
-    let targetY = (ball.vx > 0) ? (ball.y + p2.aiOffset - p2.h / 2) : (height / 2 - p2.h / 2);
-    let diff = targetY - p2.y;
-    if (Math.abs(diff) > settings.speed) {
-      p2.y += Math.sign(diff) * settings.speed;
-    } else {
-      p2.y += diff;
-    }
-    p2.y = Math.max(0, Math.min(height - p2.h, p2.y));
+  if(room.status==="playing"&&!isPlaying){
+   beginOnlineGame(room);
   }
-
-  function update() {
-    if (gameMode === 'ai') updateAI();
-
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-
-    // ارتداد أعلى وأسفل
-    if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy *= -1; }
-    if (ball.y + ball.r > height) { ball.y = height - ball.r; ball.vy *= -1; }
-
-    // اصطدام بالمضرب الأيسر (اللاعب 1)
-    if (ball.vx < 0 && ball.x - ball.r <= p1.x + p1.w && ball.x + ball.r >= p1.x &&
-        ball.y >= p1.y && ball.y <= p1.y + p1.h) {
-      let hitPos = (ball.y - (p1.y + p1.h / 2)) / (p1.h / 2);
-      let angle = hitPos * (Math.PI / 4);
-      ball.speed = Math.min(13, ball.speed + 0.35);
-      ball.vx = ball.speed * Math.cos(angle);
-      ball.vy = ball.speed * Math.sin(angle);
-      ball.x = p1.x + p1.w + ball.r;
-      p2.aiOffset = (Math.random() * 2 - 1) * diffSettings[difficulty].error;
-    }
-
-    // اصطدام بالمضرب الأيمن (اللاعب 2 أو الذكاء الاصطناعي)
-    if (ball.vx > 0 && ball.x + ball.r >= p2.x && ball.x - ball.r <= p2.x + p2.w &&
-        ball.y >= p2.y && ball.y <= p2.y + p2.h) {
-      let hitPos = (ball.y - (p2.y + p2.h / 2)) / (p2.h / 2);
-      let angle = hitPos * (Math.PI / 4);
-      ball.speed = Math.min(13, ball.speed + 0.35);
-      ball.vx = -ball.speed * Math.cos(angle);
-      ball.vy = ball.speed * Math.sin(angle);
-      ball.x = p2.x - ball.r;
-    }
-
-    // تسجيل النقاط
-    if (ball.x < 0) {
-      p2.score++;
-      checkWin() || resetBall(1);
-    } else if (ball.x > width) {
-      p1.score++;
-      checkWin() || resetBall(-1);
-    }
+  if(room.status==="finished"&&gameMode==="online"){
+   const state=room.state||{};
+   p1.score=state.p1Score||0;p2.score=state.p2Score||0;
+   stopGame();
+   document.getElementById("hud").classList.add("hidden");
+   document.getElementById("end-screen").classList.remove("hidden");
+   document.getElementById("winner-text").textContent="انتهت المباراة!";
+   document.getElementById("final-score").textContent=
+    `النتيجة: ${p1.score} - ${p2.score}`;
   }
-
-  function checkWin() {
-    if (p1.score >= WIN_SCORE || p2.score >= WIN_SCORE) {
-      isPlaying = false;
-      document.getElementById('hud').classList.add('hidden');
-      document.getElementById('end-screen').classList.remove('hidden');
-      let winner = (p1.score >= WIN_SCORE) ? 'فاز اللاعب الأيسر!' : (gameMode === 'ai' ? 'فاز الذكاء الاصطناعي!' : 'فاز اللاعب الأيمن!');
-      document.getElementById('winner-text').textContent = winner;
-      document.getElementById('final-score').textContent = `النتيجة النهائية: ${p1.score} - ${p2.score}`;
-      return true;
-    }
-    return false;
+  if(room.status==="closed"){
+   stopGame();setOnlineMessage("تم إغلاق الغرفة.");
   }
+ };
+ roomRef.on("value",roomListener);
 
-  function draw() { 
-    // خلفية الطاولة
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#0f766e';
-    ctx.fillRect(0, 0, width, height);
-
-    // خط المنتصف
-    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 10]);
-    ctx.beginPath();
-    ctx.moveTo(width / 2, 0);
-    ctx.lineTo(width / 2, height);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // المضربان
-    ctx.fillStyle = p1.color;
-    ctx.fillRect(p1.x, p1.y, p1.w, p1.h);
-
-    ctx.fillStyle = p2.color;
-    ctx.fillRect(p2.x, p2.y, p2.w, p2.h);
-
-    // الكرة
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-    ctx.fillStyle = '#f8fafc';
-    ctx.fill();
-
-    // النتيجة
-    ctx.font = 'bold 32px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(p1.score, width / 2 - 45, 45);
-    ctx.fillText(p2.score, width / 2 + 45, 45);
+ paddleListener=snapshot=>{
+  const paddles=snapshot.val()||{};
+  if(roomRole==="host"&&typeof paddles.guestY==="number"){
+   p2TargetY=paddles.guestY;
   }
-
-  let previousFrameTime = 0;
-
-  function loop(timestamp = 0) {
-    if (!isPlaying) return;
-
-    const deltaTime = previousFrameTime
-      ? Math.min(timestamp - previousFrameTime, 32)
-      : 16.67;
-    previousFrameTime = timestamp;
-
-    movePlayerPaddles(deltaTime);
-    update();
-    draw();
-
-    if (isPlaying) {
-      animId = requestAnimationFrame(loop);
-    }
+  if(roomRole==="guest"&&typeof paddles.hostY==="number"){
+   p1.y=paddles.hostY;
   }
+ };
+ roomRef.child("paddles").on("value",paddleListener);
 
-  window.addEventListener('resize', () => {
-    resize();
-    p1.y = Math.max(0, Math.min(height - p1.h, p1.y));
-    p2.y = Math.max(0, Math.min(height - p2.h, p2.y));
-    p1TargetY = p1.y;
-    p2TargetY = p2.y;
-    draw();
-  });
-
+ stateListener=snapshot=>{
+  if(roomRole!=="guest")return;
+  const s=snapshot.val();
+  if(!s)return;
+  p1.y=s.p1Y??p1.y;p2.y=s.p2Y??p2.y;
+  ball.x=s.ballX??ball.x;ball.y=s.ballY??ball.y;
+  ball.vx=s.ballVX??ball.vx;ball.vy=s.ballVY??ball.vy;
+  p1.score=s.p1Score??p1.score;p2.score=s.p2Score??p2.score;
   draw();
+ };
+ roomRef.child("state").on("value",stateListener);
+}
+
+async function toggleReady(){
+ if(!roomRef||!roomRole)return;
+ try{
+  onlineReady=!onlineReady;
+  await roomRef.child("ready/"+roomRole).set(onlineReady);
+  document.getElementById("readyBtn").textContent=
+   onlineReady?"إلغاء الاستعداد":"أنا جاهز";
+  const snap=await roomRef.get();
+  const room=snap.val();
+  if(room&&room.ready&&room.ready.host&&room.ready.guest&&roomRole==="host"){
+   await roomRef.child("status").set("playing");
+  }
+ }catch(e){
+  console.error(e);setOnlineMessage("تعذر تحديث الاستعداد.");
+ }
+}
+
+function beginOnlineGame(room){
+ gameMode="online";
+ hideScreens();
+ document.getElementById("hud").classList.remove("hidden");
+ document.getElementById("mode-label").textContent=
+  roomRole==="host"?"أونلاين - اللاعب 1":"أونلاين - اللاعب 2";
+
+ p1.score=0;p2.score=0;
+ p1.y=height/2-p1.h/2;p2.y=height/2-p2.h/2;
+ p1TargetY=p1.y;p2TargetY=p2.y;
+ if(room.state){
+  p1.score=room.state.p1Score||0;p2.score=room.state.p2Score||0;
+ }
+ if(roomRole==="host"){
+  resetBall(Math.random()>.5?1:-1);
+ }
+ isPlaying=true;previousFrameTime=0;
+ loop();
+}
+
+function syncOnline(timestamp){
+ if(!roomRef)return;
+
+ if(timestamp-lastPaddleSend>70){
+  lastPaddleSend=timestamp;
+  if(roomRole==="host"){
+   roomRef.child("paddles/hostY").set(p1.y);
+  }else{
+   roomRef.child("paddles/guestY").set(p2TargetY);
+  }
+ }
+ if(roomRole==="host"&&timestamp-lastStateSend>65){
+  lastStateSend=timestamp;
+  roomRef.child("state").update({
+   p1Y:p1.y,p2Y:p2.y,
+   ballX:ball.x,ballY:ball.y,
+   ballVX:ball.vx,ballVY:ball.vy,
+   p1Score:p1.score,p2Score:p2.score
+  });
+ }
+}
+
+async function leaveRoom(showMessage=true){
+ stopGame();
+ detachRoomListeners();
+ if(roomRef&&roomRole==="host"){
+  try{await roomRef.child("status").set("closed");}catch(e){}
+ }else if(roomRef&&roomRole==="guest"){
+  try{
+   await roomRef.transaction(room=>{
+    if(room&&room.guest===myUid){
+     room.guest=null;
+     room.ready=room.ready||{};
+     room.ready.guest=false;
+     return room;
+    }
+    return room;
+   });
+  }catch(e){}
+ }
+ roomCode=null;roomRef=null;roomRole=null;
+ onlineReady=false;opponentReady=false;
+ if(showMessage)openOnline();
+}
+
+/* الرسم الأولي */
+draw();
 </script>
 </body>
 </html>
